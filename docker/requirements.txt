@@ -1,0 +1,41 @@
+# Basic
+jupyterlab
+ipykernel
+matplotlib
+pandas
+numpy
+scipy
+scikit-learn
+findspark
+pyspark
+
+# Core libraries
+streamlit
+PyPDF2
+pdf2image
+pytesseract
+pillow
+torch==1.13.1
+torchvision==0.14.1
+transformers
+transformers[torch]
+shap
+lime
+plotly
+seaborn
+slack-sdk
+python-dotenv
+
+# for GPT integration
+openai
+
+# For OCR and document processing
+easyocr
+paddleocr
+opencv-python
+
+# Optional: For advanced models
+sentence-transformers
+
+# for synthetic data generation
+faker

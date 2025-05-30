@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 fake = Faker()
 
-def generate_invoice_data(n_invoices=1000, fraud_rate=0.1):
+def generate_invoice_data(n_invoices=1000000, fraud_rate=0.1):
     """Generate synthetic invoice data with fraud cases"""
 
     invoices = []
@@ -48,8 +48,3 @@ def generate_invoice_data(n_invoices=1000, fraud_rate=0.1):
         invoices.append(invoice)
 
     return pd.DataFrame(invoices)
-
-# Generate and save data
-df = generate_invoice_data(1000, 0.1)
-df.to_csv('synthetic_invoices.csv', index=False)
-print(f"Generated {len(df)} invoices with {df['is_fraud'].sum()} fraud cases")

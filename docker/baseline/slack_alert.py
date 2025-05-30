@@ -24,7 +24,3 @@ def send_slack_alert(message):
         print(f"[ERROR] Slack API error: {response.text}")
     else:
         print(f"[INFO] Slack message sent to {SLACK_CHANNEL}.")
-
-# Example usage
-if __name__ == "__main__":
-    send_slack_alert("🚨 Sample fraud alert: Invoice from XYZ Inc. flagged for anomaly detection.")

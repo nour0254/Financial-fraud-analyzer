@@ -117,6 +117,6 @@ class FraudDetector:
 
 # Usage example
 detector = FraudDetector()
-df = pd.read_csv('synthetic_invoices.csv')
+df = pd.read_csv('data/synthetic_invoices.csv')
 results = detector.train(df)
 print(f"Detected {sum(results['predictions'])} potential fraud cases")

@@ -1,13 +1,11 @@
 # Basic
-jupyterlab
-ipykernel
-matplotlib
 pandas
 numpy
+matplotlib
 scipy
 scikit-learn
-findspark
-pyspark
+jupyterlab
+ipykernel
 
 # Core libraries
 streamlit

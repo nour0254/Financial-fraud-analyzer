@@ -41,7 +41,7 @@ RUN . ${VENV_PATH}/bin/activate \
 ########################################
 # Stage 2: runtime
 ########################################
-ARG PYTHON_IMAGE=python:3.9-slim
+ARG PYTHON_IMAGE=python:3.10-slim
 FROM ${PYTHON_IMAGE} AS runtime
 
 ARG USER_ID=1000
@@ -85,12 +85,19 @@ ENV PATH="${VENV_PATH}/bin:$PATH:${JAVA_HOME}/bin" \
     JUPYTER_PORT=${JUPYTER_PORT} \
     JUPYTER_WORKSPACE_DIR=${JUPYTER_WORKSPACE_DIR} \
     STREAMLIT_PORT=${STREAMLIT_PORT} \
-    USE_SLACK=${USE_SLACK}
+    USE_SLACK=${USE_SLACK} \
+    PYTHONPATH=${JUPYTER_WORKSPACE_DIR}
 
-COPY --chown=jupyteruser:jupytergroup entrypoint.sh /entrypoint.sh
+# Copy all files from baseline directory
 COPY --chown=jupyteruser:jupytergroup baseline/ ${JUPYTER_WORKSPACE_DIR}/
+COPY --chown=jupyteruser:jupytergroup entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
+
+# Create necessary directories
+RUN mkdir -p ${JUPYTER_WORKSPACE_DIR}/data \
+    && mkdir -p ${JUPYTER_WORKSPACE_DIR}/models \
+    && mkdir -p ${JUPYTER_WORKSPACE_DIR}/temp
 
 EXPOSE ${JUPYTER_PORT}
 EXPOSE ${STREAMLIT_PORT}
@@ -99,4 +106,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:${JUPYTER_PORT}/api || exit 1
 
 ENTRYPOINT ["tini", "--", "/entrypoint.sh"]
-CMD jupyter-lab --ip=0.0.0.0 --port=${JUPYTER_PORT} --no-browser
+CMD ["jupyter-lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]

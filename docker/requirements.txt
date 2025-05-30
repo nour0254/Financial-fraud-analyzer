@@ -1,119 +1,69 @@
-# Core Data Science Libraries
-pandas>=1.5.0
-numpy>=1.21.0
-matplotlib>=3.5.0
-scipy>=1.9.0
-scikit-learn>=1.1.0
-
-# Jupyter Environment
-jupyterlab>=3.4.0
-ipykernel>=6.15.0
-notebook>=6.4.0
-
-# Web Framework & UI
-streamlit>=1.25.0
-plotly>=5.15.0
-seaborn>=0.11.0
-dash>=2.10.0
-
-# Machine Learning & AI
-torch>=1.13.1,<2.0.0
-torchvision>=0.14.1,<0.16.0
-transformers>=4.20.0
-sentence-transformers>=2.2.0
-shap>=0.41.0
-lime>=0.2.0
-
-# Document Processing & OCR
-PyPDF2>=3.0.0
-pdf2image>=1.16.0
-pytesseract>=0.3.10
-pillow>=9.2.0
-easyocr>=1.7.0
-paddleocr>=2.6.0
-opencv-python>=4.6.0
-
-# Natural Language Processing
-openai>=1.0.0
-langchain>=0.0.200
-tiktoken>=0.4.0
-
-# Communication & Alerts
-slack-sdk>=3.21.0
-requests>=2.28.0
-flask>=2.2.0
-
-# Configuration & Environment
-python-dotenv>=1.0.0
-pydantic>=1.10.0
-configparser>=5.3.0
-
-# Data Generation & Testing
-faker>=18.0.0
-pytest>=7.1.0
-pytest-cov>=4.0.0
-
-# Utilities & Helpers
-joblib>=1.2.0
-tqdm>=4.64.0
-python-dateutil>=2.8.0
-pytz>=2022.1
-
-# Database & Storage (Optional)
-sqlalchemy>=1.4.0
-sqlite3
-redis>=4.3.0
-
-# Monitoring & Logging
-loguru>=0.6.0
-wandb>=0.13.0
-
-# Security & Validation
-cryptography>=3.4.0
-pydantic>=1.10.0
-
-# Additional ML Libraries
-xgboost>=1.6.0
-lightgbm>=3.3.0
-catboost>=1.1.0
-
-# Time Series (if needed)
-prophet>=1.1.0
-
-# Image Processing Enhancement
-imageio>=2.21.0
-scikit-image>=0.19.0
-
-# Web Scraping (if needed for data collection)
-beautifulsoup4>=4.11.0
-scrapy>=2.6.0
-
-# Export & Reporting
-reportlab>=3.6.0
-fpdf>=2.5.0
-jinja2>=3.1.0
-
-# Performance & Optimization
-numba>=0.56.0
-cython>=0.29.0
-
-# Development Tools
-black>=22.6.0
-flake8>=5.0.0
-mypy>=0.971
-
-# Additional Document Processing
-python-docx>=0.8.11
-openpyxl>=3.0.10
-xlsxwriter>=3.0.3
-
-# Email Processing (for auto-responder)
-email-validator>=1.2.0
-smtplib-ssl>=1.0.0
-
-# API Development
-fastapi>=0.85.0
-uvicorn>=0.18.0
-
-# Caching
-diskcache>=5.4.0
+PyPDF2
+beautifulsoup4
+black
+catboost
+configparser
+cryptography
+cython
+dash
+diskcache
+easyocr
+email-validator
+faker
+fastapi
+flake8
+flask
+fpdf
+imageio
+ipykernel
+jinja2
+joblib
+jupyterlab
+langchain
+lightgbm
+lime
+loguru
+matplotlib
+mypy
+notebook
+numba
+numpy
+openai
+opencv-python
+openpyxl
+paddleocr
+pandas
+pdf2image
+pillow
+plotly
+prophet
+pydantic
+pytesseract
+pytest
+pytest-cov
+python-dateutil
+python-docx
+python-dotenv
+pytz
+redis
+reportlab
+requests
+scikit-image
+scikit-learn
+scipy
+scrapy
+seaborn
+sentence-transformers
+shap
+slack-sdk
+sqlalchemy
+streamlit
+tiktoken
+torch
+torchvision
+tqdm
+transformers
+uvicorn
+wandb
+xgboost
+xlsxwriter

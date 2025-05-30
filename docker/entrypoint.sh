@@ -13,13 +13,13 @@ mkdir -p ${JUPYTER_WORKSPACE_DIR}/data
 mkdir -p ${JUPYTER_WORKSPACE_DIR}/models
 mkdir -p ${JUPYTER_WORKSPACE_DIR}/temp
 
-# Generate synthetic data if it doesn't exist
-if [ ! -f "${JUPYTER_WORKSPACE_DIR}/data/synthetic_invoices.csv" ]; then
-    echo "Generating synthetic data..."
-    cd ${JUPYTER_WORKSPACE_DIR}
-    python synthetic_data_generator.py
-    mv synthetic_invoices.csv data/synthetic_invoices.csv
-fi
+## Generate synthetic data if it doesn't exist
+#if [ ! -f "${JUPYTER_WORKSPACE_DIR}/data/synthetic_invoices.csv" ]; then
+#    echo "Generating synthetic data..."
+#    cd ${JUPYTER_WORKSPACE_DIR}
+#    python synthetic_data_generator.py
+#    mv synthetic_invoices.csv data/synthetic_invoices.csv
+#fi
 
 # Start Jupyter Lab in background
 echo "Starting Jupyter Lab on port ${JUPYTER_PORT}..."
@@ -36,11 +36,11 @@ if [ "$STREAMLIT_PORT" != "" ]; then
     STREAMLIT_PID=$!
 fi
 
-# Optionally run Slack notifier if enabled and token provided
-if [ "$USE_SLACK" = "true" ] && [ "$SLACK_BOT_TOKEN" != "" ]; then
-    echo "Starting Slack notifier..."
-    python ${JUPYTER_WORKSPACE_DIR}/slack_alert.py &
-fi
+## Optionally run Slack notifier if enabled and token provided
+#if [ "$USE_SLACK" = "true" ] && [ "$SLACK_BOT_TOKEN" != "" ]; then
+#    echo "Starting Slack notifier..."
+#    python ${JUPYTER_WORKSPACE_DIR}/slack_bot.py &
+#fi
 
 echo "Services started successfully!"
 echo "Jupyter Lab: http://localhost:${JUPYTER_PORT}"

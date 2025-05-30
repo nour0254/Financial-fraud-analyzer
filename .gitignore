@@ -1,3 +1,5 @@
 .ipynb_checkpoints
 .Trash-1000
 test.ipynb
+slack_alert.py
+.env

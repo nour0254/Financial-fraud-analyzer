@@ -70,7 +70,6 @@ flowchart TD
     I --> J[Streamlit UI Dashboard]
     G --> K[SlackNotifier Alerts]
 ```
-
 ---
 
 ## 📋 Complete Project Structure
@@ -98,6 +97,7 @@ financial_fraud_analyzer/
 │   └── test_integration.py
 └── README.md
 ```
+
 ---
 
 ## ⚡ Quick Wins & Time-Saving Tips
@@ -114,19 +114,6 @@ financial_fraud_analyzer/
 3. **Basic Streamlit UI** (2 hours)
 4. **Results visualization** (1 hour)
 
----
-### Deployment Options
-```bash
-# Local Streamlit
-streamlit run streamlit_app.py
-
-# Docker deployment
-docker build -t fraud-analyzer .
-docker run -p 8501:8501 fraud-analyzer
-
-# Streamlit Cloud (for demo)
-# Push to GitHub and deploy via share.streamlit.io
-```
 ---
 
 ## 📚 Additional Resources

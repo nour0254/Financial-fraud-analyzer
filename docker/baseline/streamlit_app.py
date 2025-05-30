@@ -7,6 +7,7 @@ import sys
 from PIL import Image
 import tempfile
 from datetime import datetime
+import numpy as np
 
 # Add current directory to Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -21,7 +22,7 @@ try:
     from auto_responder import AutoResponder, add_auto_response_tab
     from config import Config
     from utils import setup_logging, validate_invoice_data, calculate_risk_metrics, create_fraud_summary
-    from slack_alert import send_slack_alert
+    from stack_bot import SlackNotifier
     from synthetic_data_generator import generate_invoice_data
 except ImportError as e:
     st.error(f"Import error: {e}")
@@ -231,10 +232,26 @@ def process_single_document(uploaded_file, parser, detector, config):
                     st.error(f"🚨 FRAUD DETECTED (Confidence: {confidence:.2f})")
 
                     # Send Slack alert if enabled
+                    # Send Slack alert if enabled
                     if config['use_slack'] and config['slack_token']:
-                        alert_message = f"🚨 Fraud Alert: {parsing_result['invoice_id']} - Amount: ${parsing_result['amount']:,.2f} - Risk: {confidence:.2%}"
-                        send_slack_alert(alert_message)
-                        st.info("Slack alert sent!")
+                        try:
+                            slack_notifier = SlackNotifier(config['slack_token'])
+                            invoice_data = {
+                                'invoice_id': parsing_result['invoice_id'],
+                                'vendor_name': 'Unknown',
+                                'amount': parsing_result['amount']
+                            }
+                            response = slack_notifier.send_fraud_alert(
+                                Config.SLACK_CHANNEL,
+                                invoice_data,
+                                confidence
+                            )
+                            if response:
+                                st.success("Slack alert sent successfully!")
+                            else:
+                                st.warning("Failed to send Slack alert")
+                        except Exception as e:
+                            st.error(f"Slack alert error: {e}")
 
                 else:
                     st.success(f"✅ Document appears legitimate (Confidence: {1-confidence:.2f})")
@@ -321,13 +338,14 @@ def main():
     parser, detector = models
 
     # Main tabs
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "📄 Document Upload",
         "📊 Batch Analysis",
         "🔍 Fraud Dashboard",
         "📈 Analytics",
         "🤖 Auto Response",
-        "📋 Reports"
+        "📋 Reports",
+        "💬 Slack Integration"
     ])
 
     with tab1:
@@ -542,6 +560,121 @@ def main():
                         st.dataframe(df_fraud, use_container_width=True)
         else:
             st.info("No processed documents available for reporting.")
+
+    with tab7:
+        st.header("💬 Slack Integration & Monitoring")
+
+        if config['slack_token']:
+            st.success("✅ Slack integration is configured")
+
+            # Slack configuration display
+            col1, col2 = st.columns(2)
+            with col1:
+                st.info(f"**Channel:** {Config.SLACK_CHANNEL}")
+                st.info(f"**Bot Token:** {'*' * 20}...")
+
+            with col2:
+                # Test Slack connection
+                if st.button("🧪 Test Slack Connection"):
+                    try:
+                        slack_notifier = SlackNotifier(config['slack_token'])
+                        test_data = {
+                            'invoice_id': 'TEST-001',
+                            'vendor_name': 'Test Vendor',
+                            'amount': 1000.00
+                        }
+                        response = slack_notifier.send_fraud_alert(
+                            Config.SLACK_CHANNEL,
+                            test_data,
+                            0.8
+                        )
+                        if response:
+                            st.success("✅ Slack connection successful!")
+                        else:
+                            st.error("❌ Slack connection failed")
+                    except Exception as e:
+                        st.error(f"❌ Slack error: {e}")
+
+            # Alert history
+            st.subheader("📊 Alert Statistics")
+            fraud_cases = [doc for doc in st.session_state.processed_documents if doc['fraud_detected']]
+
+            if fraud_cases:
+                st.metric("Alerts Sent", len(fraud_cases))
+
+                # Recent alerts table
+                alert_data = []
+                for case in fraud_cases[-10:]:  # Last 10 alerts
+                    alert_data.append({
+                        'Time': case.get('timestamp', 'Unknown'),
+                        'Document': case['document'],
+                        'Invoice ID': case['parsed_data'].get('invoice_id', 'Unknown'),
+                        'Amount': f"${case['parsed_data'].get('amount', 0):,.2f}",
+                        'Risk Score': f"{case['confidence']:.1%}"
+                    })
+
+                if alert_data:
+                    st.subheader("🔔 Recent Alerts")
+                    st.dataframe(pd.DataFrame(alert_data), use_container_width=True)
+            else:
+                st.info("No fraud alerts sent yet")
+
+            # Manual alert sender
+            with st.expander("📤 Send Manual Alert"):
+                manual_invoice_id = st.text_input("Invoice ID")
+                manual_vendor = st.text_input("Vendor Name")
+                manual_amount = st.number_input("Amount", min_value=0.0, value=1000.0)
+                manual_risk = st.slider("Risk Score", 0.0, 1.0, 0.8)
+
+                if st.button("Send Manual Alert"):
+                    if manual_invoice_id and manual_vendor:
+                        try:
+                            slack_notifier = SlackNotifier(config['slack_token'])
+                            manual_data = {
+                                'invoice_id': manual_invoice_id,
+                                'vendor_name': manual_vendor,
+                                'amount': manual_amount
+                            }
+                            response = slack_notifier.send_fraud_alert(
+                                Config.SLACK_CHANNEL,
+                                manual_data,
+                                manual_risk
+                            )
+                            if response:
+                                st.success("Manual alert sent!")
+                            else:
+                                st.error("Failed to send manual alert")
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+                    else:
+                        st.warning("Please fill in Invoice ID and Vendor Name")
+        else:
+            st.warning("⚠️ Slack integration not configured")
+            st.info("Please add your Slack Bot Token in the sidebar to enable Slack alerts")
+
+            with st.expander("🔧 Setup Instructions"):
+                st.markdown("""
+                ### Setting up Slack Integration:
+
+                1. **Create a Slack App:**
+                   - Go to https://api.slack.com/apps
+                   - Click "Create New App"
+                   - Choose "From scratch"
+
+                2. **Configure Bot Permissions:**
+                   - Go to "OAuth & Permissions"
+                   - Add these scopes:
+                     - `chat:write`
+                     - `chat:write.public`
+
+                3. **Install to Workspace:**
+                   - Click "Install to Workspace"
+                   - Copy the "Bot User OAuth Token"
+
+                4. **Add Token to Environment:**
+                   - Set `SLACK_BOT_TOKEN` environment variable
+                   - Or enter it in the sidebar
+                """)
 
 if __name__ == "__main__":
     main()

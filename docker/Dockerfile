@@ -12,19 +12,18 @@ ARG REQUIREMENTS_FILE=requirements.txt
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     build-essential \
+    poppler-utils \
+    tesseract-ocr \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
     git \
     curl \
-    tini \
-    jq \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    default-jre \
-    && rm -rf /var/lib/apt/lists/*
-
-ENV JAVA_HOME=/usr/lib/jvm/default-java
+RUN pdftoppm -v || echo "pdftoppm not found"
 
 RUN addgroup --gid ${GROUP_ID} jupytergroup \
     && useradd -ms /bin/bash -u ${USER_ID} -g jupytergroup jupyteruser

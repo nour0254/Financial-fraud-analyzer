@@ -3,3 +3,8 @@
 test.ipynb
 slack_alert.py
 .env
+__pycache__
+*.pyc
+venv
+uploads/*
+!uploads/.keep

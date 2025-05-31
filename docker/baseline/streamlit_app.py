@@ -150,73 +150,52 @@ def combine_results(ml_fraud_result, rule_fraud_result, ml_weight=0.6, rule_weig
 
 def analyze_document_comprehensive(parser, detector, rule_detector, uploaded_file, use_advanced_parser):
     try:
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{uploaded_file.name}") as tmp_file:
+            tmp_file.write(uploaded_file.getbuffer())
+            temp_path = tmp_file.name
+
+        # Convert PDF to image
         if uploaded_file.type == 'application/pdf':
-            # IMPORTANT: Set poppler_path to your Poppler bin folder if not in PATH
-            #poppler_path = r"C:\poppler-23.05.0\Library\bin" if platform.system() == "Windows" else None
-            #images = convert_from_bytes(uploaded_file.read(), poppler_path=poppler_path)
-            images = convert_from_bytes(uploaded_file.read())
+            images = convert_from_bytes(uploaded_file.getbuffer())
             image = images[0]
         elif uploaded_file.type.startswith('image'):
             image = Image.open(uploaded_file)
         else:
             return {'error': f'Unsupported file type: {uploaded_file.type}'}
 
-        # Pass 'image' further to your parser/detector
-        parsing_result = parser.parse(image, use_advanced=use_advanced_parser)
-        ml_fraud_result = detector.detect(image)
-        rule_fraud_result = rule_detector.check_rules(parsing_result)
-        combined_result = combine_results(ml_fraud_result, rule_fraud_result)
-
-        return {
-            'parsing_result': parsing_result,
-            'ml_fraud': ml_fraud_result,
-            'rule_fraud': rule_fraud_result,
-            'combined': combined_result
-        }
-
-    except Exception as e:
-        return {'error': str(e)}
-
-    try:
-        # Save uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{uploaded_file.name}") as tmp_file:
-            tmp_file.write(uploaded_file.getbuffer())
-            temp_path = tmp_file.name
-
-        # Choose parser based on user preference
+        # Parse document
         if use_advanced_parser:
             try:
                 advanced_parser = AdvancedDocumentParser()
-                parsing_result = advanced_parser.parse_with_layoutlm(temp_path)
-                # Convert to compatible format
+                layout_result = advanced_parser.parse_with_layoutlm(temp_path)
                 parsing_result = {
                     'invoice_id': 'LAYOUTLM_PARSED',
                     'amount': 0,
                     'date': '2024-01-01',
                     'extraction_confidence': 0.8,
-                    'raw_text': 'Advanced parsing completed'
+                    'raw_text': ' '.join(layout_result['tokens'])
                 }
             except Exception as e:
                 st.warning(f"Advanced parser failed, falling back to standard parser: {e}")
-                parsing_result = parser.parse_document(temp_path)
+                parsing_result = parser.parse(image)
         else:
-            parsing_result = parser.parse_document(temp_path)
+            parsing_result = parser.parse(image)
 
         if 'error' not in parsing_result:
-            # Validate extracted data
             if not validate_invoice_data(parsing_result):
                 st.warning("Extracted data validation failed - some required fields may be missing")
 
-            # Create DataFrame for fraud detection
+            # Construct DataFrame
             doc_df = pd.DataFrame([{
                 'invoice_id': parsing_result['invoice_id'],
-                'vendor_name': 'Unknown',  # Would need vendor detection
+                'vendor_name': 'Unknown',
                 'amount': parsing_result['amount'],
                 'invoice_date': parsing_result['date'] or '2024-01-01',
                 'category': 'Unknown'
             }])
 
-            # ML-based fraud detection
+            # ML fraud detection
             ml_fraud_result = detector.predict(doc_df)
             ml_is_fraud = ml_fraud_result['fraud_predictions'][0]
             ml_confidence = ml_fraud_result['confidence_scores'][0]
@@ -227,7 +206,7 @@ def analyze_document_comprehensive(parser, detector, rule_detector, uploaded_fil
             rule_score = rule_fraud_result['fraud_scores'][0]
             triggered_rules = rule_fraud_result['triggered_rules'][0]
 
-            # Combined fraud score (weighted average)
+            # Combined score
             combined_score = (ml_confidence * 0.7) + (rule_score * 0.3)
             combined_is_fraud = combined_score > st.session_state.config.FRAUD_THRESHOLD
 
@@ -249,7 +228,6 @@ def analyze_document_comprehensive(parser, detector, rule_detector, uploaded_fil
                 'doc_df': doc_df
             }
 
-            # Send Slack alert if fraud detected and Slack is configured
             if combined_is_fraud and st.session_state.config.SLACK_BOT_TOKEN:
                 alert_message = f"""
 🚨 FRAUD ALERT 🚨
@@ -260,21 +238,16 @@ Combined Risk Score: {combined_score:.2%}
 Triggered Rules: {', '.join(triggered_rules) if triggered_rules else 'None'}
 """
                 send_slack_alert(alert_message)
-
         else:
             results = {'error': parsing_result.get('error', 'Unknown parsing error')}
 
-        # Clean up temp file
-        try:
-            os.unlink(temp_path)
-        except:
-            pass
+        os.unlink(temp_path)
+        return results
 
     except Exception as e:
-        results = {'error': str(e)}
-        logger.error(f"Error in comprehensive analysis: {e}")
+        logger.error(f"Error in document analysis: {e}")
+        return {'error': str(e)}
 
-    return results
 
 def main():
     st.title("🔍 Financial Document Fraud Analyzer")
@@ -300,16 +273,14 @@ def main():
 
     # API Configuration status
     st.sidebar.subheader("🔗 Integration Status")
-    st.sidebar.write("OpenAI API:", "✅" if st.session_state.config.OPENAI_API_KEY else "❌")
-    st.sidebar.write("Slack Integration:", "✅" if st.session_state.config.SLACK_BOT_TOKEN else "❌")
+    st.sidebar.write("OpenAI API:", "✅" if st.session_state.config.OPENAI_API_KEY else "⚠️ Missing")
+    st.sidebar.write("Slack Integration:", "✅" if st.session_state.config.SLACK_BOT_TOKEN else "⚠️ Missing")
 
     # Load models
-    models = load_models()
-    if any(model is None for model in models[:3]):  # Check first 3 models (auto_responder can be None)
-        st.error("Failed to load models. Please check the logs.")
+    parser, detector, rule_detector, auto_responder = load_models()
+    if not all([parser, detector, rule_detector]):
+        st.error("Failed to load essential models.")
         return
-
-    parser, detector, rule_detector, auto_responder = models
 
     # Tabs for different functionalities
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
@@ -343,7 +314,7 @@ def main():
                         parser, detector, rule_detector, uploaded_file, use_advanced_parser
                     )
 
-                    if 'error' not in results:
+                    if results.get('error') is None:
                         # Display results in organized columns
                         col1, col2 = st.columns(2)
 
@@ -439,8 +410,10 @@ def main():
         )
 
         if uploaded_files and st.button("🔍 Analyze All Documents", type="primary"):
-            progress_bar = st.progress(0)
-            status_text = st.empty()
+            if "progress_bar" not in st.session_state:
+                st.session_state.progress_bar = st.progress(0)
+            if "status_text" not in st.session_state:
+                st.session_state.status_text = st.empty()
             results = []
 
             for i, file in enumerate(uploaded_files):
@@ -544,6 +517,7 @@ def main():
                 df_dashboard,
                 x='ML_Risk',
                 y='Rule_Score',
+                range_x=[0,1], range_y=[0,1],
                 color='Status',
                 size='Amount',
                 title='ML Risk vs Rule Score Comparison',
@@ -601,7 +575,8 @@ def main():
 
                 with analytics_tab2:
                     # Time-based analysis
-                    df_sample['invoice_date'] = pd.to_datetime(df_sample['invoice_date'])
+                    df_sample['invoice_date'] = pd.to_datetime(df_sample['invoice_date'], errors='coerce')
+                    df_sample = df_sample.dropna(subset=['invoice_date'])
                     df_sample['month'] = df_sample['invoice_date'].dt.to_period('M')
 
                     monthly_fraud = df_sample.groupby('month')['is_fraud'].agg(['count', 'sum']).reset_index()
@@ -690,8 +665,16 @@ def main():
             ])
 
             if st.form_submit_button("Add Rule"):
-                st.success(f"Rule '{rule_name}' would be added with weight {rule_weight}")
-                st.info("Note: Dynamic rule addition requires backend implementation")
+                if rule_detector and hasattr(rule_detector, 'rules'):
+                    new_rule = {
+                        'name': rule_name,
+                        'description': rule_description,
+                        'weight': rule_weight
+                    }
+                    rule_detector.rules.append(new_rule)
+                    st.success(f"Rule '{rule_name}' added successfully.")
+                else:
+                    st.error("Rule engine is not initialized or cannot add rules.")
 
 if __name__ == "__main__":
     main()

@@ -2,14 +2,14 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Any
 import logging
+import os
 
 def setup_logging():
-    """Setup logging configuration"""
+    log_path = os.path.join("/tmp", "fraud_analyzer.log")
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
-            logging.FileHandler('fraud_analyzer.log'),
+            logging.FileHandler(log_path),
             logging.StreamHandler()
         ]
     )
